@@ -1,0 +1,33 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Runtime and local input files
+files/
+local-files/
+data/
+*.xls
+*.xlsx
+*.xlsm
+*.csv
+
+# n8n local state and exports containing instance-specific data
+.n8n/
+credentials/
+executions/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+tmp/
+temp/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/

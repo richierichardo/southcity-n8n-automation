@@ -1,0 +1,1120 @@
+{
+  "name": "SouthCity - Settlement - MVP",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        176
+      ],
+      "id": "2d9c687a-7651-4cfa-b95d-04d72860d769",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      runMode: \"fixture\",\n      period: \"2026-04\",\n\n      workingPaper: [\n        {\n          wpRowId: 1,\n          sourceRow: 8,\n          date: \"2026-01-22\",\n          voucherNo: \"PMT2/BK/2601/0062\",\n          description: \"TP01/PO/26010005 - Advance Employee\",\n          amount: 2500000\n        },\n        {\n          wpRowId: 2,\n          sourceRow: 9,\n          date: \"2026-03-10\",\n          voucherNo: \"PMT2/BK/2603/0123\",\n          description: \"Styling Apartment 2 Bedroom\",\n          amount: 25696900\n        },\n        {\n          wpRowId: 3,\n          sourceRow: 10,\n          date: \"2026-03-15\",\n          voucherNo: \"PMT2/BK/2603/0145\",\n          description: \"PBB JV 2 Summarecon\",\n          amount: 422974179\n        }\n      ],\n\n      glCredits: [\n        {\n          glRowId: 1,\n          date: \"2026-04-02\",\n          journalNo: \"ADV/BK/2604/0004\",\n          description: \"Settlement TP01/PO/26010005\",\n          debit: 0,\n          credit: 2500000\n        },\n        {\n          glRowId: 2,\n          date: \"2026-04-05\",\n          journalNo: \"ADV/BK/2604/0010\",\n          description: \"Settlement Styling Apartment 2 Bedroom\",\n          debit: 0,\n          credit: 7867700\n        },\n        {\n          glRowId: 3,\n          date: \"2026-04-08\",\n          journalNo: \"ADV/BK/2604/0018\",\n          description: \"Settlement Styling Apartment 2 Bedroom\",\n          debit: 0,\n          credit: 8001000\n        },\n        {\n          glRowId: 4,\n          date: \"2026-04-12\",\n          journalNo: \"ADV/BK/2604/0031\",\n          description: \"Settlement PBB JV 2 Summarecon\",\n          debit: 0,\n          credit: 315869963\n        }\n      ]\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        -48
+      ],
+      "id": "c96c9897-7bbc-424f-8a5f-9fb430dfa57a",
+      "name": "Fixture - Source Contract"
+    },
+    {
+      "parameters": {
+        "fileSelector": "=/files/Working Paper Advances and Prepayment-Soal.xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        192,
+        96
+      ],
+      "id": "e2cee768-9ebe-4685-933a-1b8b3bbdd17a",
+      "name": "Read - Working Paper"
+    },
+    {
+      "parameters": {
+        "fileSelector": "/files/GL - Advances Other - April 2026.xls",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        192,
+        336
+      ],
+      "id": "12677524-2b8f-4730-88f3-879ebdf1b227",
+      "name": "Read - GL"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        416,
+        96
+      ],
+      "id": "e0c01cb7-327c-4e15-8858-0bc80c40f200",
+      "name": "Extract Working"
+    },
+    {
+      "parameters": {
+        "operation": "xls",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        416,
+        336
+      ],
+      "id": "46cd5cbd-fb8a-425c-9e33-49dd09168d59",
+      "name": "Extract GL"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(item => item.json);\n\nreturn [\n  {\n    json: {\n      source: \"gl_raw\",\n      rowCount: rows.length,\n      rows\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        336
+      ],
+      "id": "4f1991a9-0fad-481f-b282-d39537a43d1d",
+      "name": "Collect - GL Rows"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(item => item.json);\n\nreturn [\n  {\n    json: {\n      source: \"working_paper_raw\",\n      rowCount: rows.length,\n      rows\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        96
+      ],
+      "id": "5c4a7189-9fca-41f7-b211-f2a376c950b8",
+      "name": "Collect - Working"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawRows = $input.first().json.rows ?? [];\n\nfunction excelDateToISO(value) {\n  if (value === null || value === undefined || value === \"\") {\n    return null;\n  }\n\n  if (typeof value === \"number\") {\n    const baseDate = new Date(Date.UTC(1899, 11, 30));\n    const date = new Date(baseDate.getTime() + value * 86400000);\n    return date.toISOString().slice(0, 10);\n  }\n\n  const date = new Date(value);\n\n  if (!Number.isNaN(date.getTime())) {\n    return date.toISOString().slice(0, 10);\n  }\n\n  return String(value);\n}\n\nfunction toAmount(value) {\n  if (typeof value === \"number\") {\n    return value;\n  }\n\n  const cleaned = String(value ?? \"\")\n    .replace(/[^\\d.-]/g, \"\");\n\n  const amount = Number(cleaned);\n\n  return Number.isFinite(amount) ? amount : 0;\n}\n\nconst workingPaper = rawRows\n  .map((row, index) => {\n    const description = row[\"__EMPTY_1\"];\n    const amount = toAmount(row[\"__EMPTY_2\"]);\n\n    return {\n      row,\n      index,\n      description,\n      amount\n    };\n  })\n  .filter(item => {\n    return item.description &&\n      String(item.description).toLowerCase() !== \"description\" &&\n      item.amount > 0;\n  })\n  .map((item, index) => {\n    const row = item.row;\n\n    return {\n      wpRowId: index + 1,\n      sourceRowIndex: item.index,\n      advanceDate: excelDateToISO(\n        row[\"PT. SETIAWAN DWI TUNGGAL\"]\n      ),\n      voucherNo: String(row[\"__EMPTY\"] ?? \"\").trim(),\n      description: String(item.description).trim(),\n      amount: item.amount,\n\n      realizationDate: null,\n      realizationVouchers: [],\n      realizationAmount: 0,\n      balance: item.amount,\n      status: \"UNSETTLED\"\n    };\n  });\n\nreturn [\n  {\n    json: {\n      source: \"working_paper_normalized\",\n      rowCount: workingPaper.length,\n      workingPaper\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        96
+      ],
+      "id": "fbb13e21-3f91-4be0-a73e-50ff0571a797",
+      "name": "Normalize - Working"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawRows = $input.first().json.rows ?? [];\n\nfunction getValue(row, aliases) {\n  const entry = Object.entries(row).find(([key]) => {\n    const normalizedKey = key\n      .replace(/\\s+/g, \" \")\n      .trim()\n      .toUpperCase();\n\n    return aliases.includes(normalizedKey);\n  });\n\n  return entry ? entry[1] : null;\n}\n\nfunction excelDateToISO(value) {\n  if (value === null || value === undefined || value === \"\") {\n    return null;\n  }\n\n  if (typeof value === \"number\") {\n    const baseDate = new Date(Date.UTC(1899, 11, 30));\n    const date = new Date(baseDate.getTime() + value * 86400000);\n    return date.toISOString().slice(0, 10);\n  }\n\n  const date = new Date(value);\n\n  if (!Number.isNaN(date.getTime())) {\n    return date.toISOString().slice(0, 10);\n  }\n\n  return String(value);\n}\n\nfunction toAmount(value) {\n  if (typeof value === \"number\") {\n    return value;\n  }\n\n  const cleaned = String(value ?? \"\")\n    .replace(/[^\\d.-]/g, \"\");\n\n  const amount = Number(cleaned);\n\n  return Number.isFinite(amount) ? amount : 0;\n}\n\nconst glCredits = rawRows\n  .map((row, index) => {\n    const credit = toAmount(\n      getValue(row, [\"KREDIT-IDR\", \"KREDIT IDR\", \"KREDIT\"])\n    );\n\n    return {\n      row,\n      index,\n      date: getValue(row, [\"TANGGAL\", \"DATE\"]),\n      journalNo: getValue(row, [\"NO JURNAL\", \"JOURNAL NO\"]),\n      description: getValue(row, [\"DESKRIPSI\", \"DESCRIPTION\"]),\n      debit: toAmount(\n        getValue(row, [\"DEBET-IDR\", \"DEBET IDR\", \"DEBET\", \"DEBIT\"])\n      ),\n      credit\n    };\n  })\n  .filter(item => {\n    return item.credit > 0;\n  })\n  .map((item, index) => {\n    return {\n      glRowId: index + 1,\n      sourceRowIndex: item.index,\n      date: excelDateToISO(item.date),\n      journalNo: String(item.journalNo ?? \"\").trim(),\n      description: String(item.description ?? \"\").trim(),\n      debit: item.debit,\n      credit: item.credit\n    };\n  });\n\nreturn [\n  {\n    json: {\n      source: \"gl_credits_normalized\",\n      rowCount: glCredits.length,\n      glCredits\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        336
+      ],
+      "id": "ea4e10b9-acc1-43e3-80ee-6c883ed31f01",
+      "name": "Normalize - GL"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1152,
+        224
+      ],
+      "id": "da1bc89f-448b-44ee-bdd7-b05d2370ff52",
+      "name": "Merge - Source Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst workingPaperItem = items.find(item => {\n  return Array.isArray(item.json.workingPaper);\n});\n\nconst glItem = items.find(item => {\n  return Array.isArray(item.json.glCredits);\n});\n\nconst workingPaper = workingPaperItem?.json.workingPaper ?? [];\nconst glCredits = glItem?.json.glCredits ?? [];\n\nreturn [\n  {\n    json: {\n      runId: new Date().toISOString(),\n      period: \"2026-04\",\n\n      workingPaper,\n      glCredits,\n\n      sourceStatus: {\n        workingPaperRows: workingPaper.length,\n        glCreditRows: glCredits.length\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1376,
+        224
+      ],
+      "id": "f183271d-bec7-4b85-8400-7ba832cd2120",
+      "name": "Build - Source Contract"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nconst workingPaper = input.workingPaper ?? [];\nconst glCredits = input.glCredits ?? [];\n\nif (!workingPaper.length) {\n  throw new Error(\"Working Paper kosong.\");\n}\n\nif (!glCredits.length) {\n  throw new Error(\"GL Credits kosong.\");\n}\n\nconst STOP_WORDS = new Set([\n  \"THE\",\n  \"DI\",\n  \"DAN\",\n  \"DARI\",\n  \"KE\",\n  \"UNTUK\",\n  \"PADA\",\n  \"TAHUN\",\n  \"BULAN\",\n  \"PERIODE\",\n  \"TGL\",\n  \"UM\",\n  \"ADVANCE\",\n  \"ADVANCES\",\n  \"PEMBAYARAN\",\n  \"PELUNASAN\",\n  \"PENGEMBALIAN\",\n  \"KELEBIHAN\",\n  \"DANA\",\n  \"TRANSFER\",\n  \"PENERIMAAN\",\n  \"TAGIHAN\"\n]);\n\nfunction cleanText(value) {\n  return String(value ?? \"\")\n    .normalize(\"NFD\")\n    .replace(/[\\u0300-\\u036f]/g, \"\")\n    .toUpperCase()\n    .replace(/[^A-Z0-9/]+/g, \" \")\n    .replace(/\\s+/g, \" \")\n    .trim();\n}\n\nfunction tokens(value) {\n  return cleanText(value)\n    .replace(/\\//g, \" \")\n    .split(\" \")\n    .filter(token => {\n      return token &&\n        token.length >= 2 &&\n        !STOP_WORDS.has(token);\n    });\n}\n\nfunction extractReferences(value) {\n  const text = String(value ?? \"\").toUpperCase();\n\n  return text.match(\n    /\\b[A-Z0-9]+\\/(?:PO|WO)\\/\\d{8}\\b/g\n  ) ?? [];\n}\n\nfunction similarityScore(target, candidate) {\n  const targetTokens = [...new Set(tokens(target))];\n  const candidateTokens = new Set(tokens(candidate));\n\n  const matchedTokens = targetTokens.filter(token => {\n    return candidateTokens.has(token);\n  });\n\n  const score = targetTokens.length\n    ? matchedTokens.length / targetTokens.length\n    : 0;\n\n  return {\n    score,\n    matchedTokens\n  };\n}\n\nfunction phraseRule(target, candidate) {\n  const targetText = cleanText(target);\n  const candidateText = cleanText(candidate);\n\n  // Styling Apartment 2 Bedroom\n  if (\n    targetText.includes(\"STYLING\") &&\n    targetText.includes(\"1132\")\n  ) {\n    return (\n      candidateText.includes(\"STYLING\") &&\n      candidateText.includes(\"1132\")\n    );\n  }\n\n  // Styling Apartment 1127 Studio\n  if (\n    targetText.includes(\"STYLING\") &&\n    (\n      targetText.includes(\"1127\") ||\n      targetText.includes(\"STUDIO\")\n    )\n  ) {\n    return (\n      candidateText.includes(\"STYLING\") &&\n      (\n        candidateText.includes(\"1127\") ||\n        candidateText.includes(\"STUDIO\")\n      )\n    );\n  }\n\n  // PBB JV 2 Summarecon\n  if (\n    targetText.includes(\"PBB\") &&\n    targetText.includes(\"JV\") &&\n    targetText.includes(\"2\")\n  ) {\n    return (\n      candidateText.includes(\"PBB\") &&\n      candidateText.includes(\"JV\") &&\n      candidateText.includes(\"2\")\n    );\n  }\n\n  // Dropbox\n  if (targetText.includes(\"DROPBOX\")) {\n    return candidateText.includes(\"DROPBOX\");\n  }\n\n  // Complimentary March\n  if (\n    targetText.includes(\"COMPLIMENTARY\") &&\n    targetText.includes(\"MARET\")\n  ) {\n    return (\n      candidateText.includes(\"COMPLIMENTARY\") &&\n      candidateText.includes(\"MARET\")\n    );\n  }\n\n  // Buka puasa\n  if (\n    targetText.includes(\"BUKA\") &&\n    targetText.includes(\"PUASA\")\n  ) {\n    return (\n      candidateText.includes(\"BUKA\") &&\n      candidateText.includes(\"PUASA\")\n    );\n  }\n\n  // Package meeting\n  if (\n    targetText.includes(\"PAKET\") &&\n    targetText.includes(\"MEETING\")\n  ) {\n    return (\n      candidateText.includes(\"PAKET\") &&\n      candidateText.includes(\"MEETING\")\n    );\n  }\n\n  // Open table\n  if (\n    targetText.includes(\"OPEN\") &&\n    targetText.includes(\"TABLE\")\n  ) {\n    return (\n      candidateText.includes(\"OPEN\") &&\n      candidateText.includes(\"TABLE\")\n    );\n  }\n\n  // Talenta\n  if (targetText.includes(\"TALENTA\")) {\n    return candidateText.includes(\"TALENTA\");\n  }\n\n  return null;\n}\n\nfunction latestDate(rows) {\n  const dates = rows\n    .map(row => row.date)\n    .filter(Boolean)\n    .sort();\n\n  return dates.length ? dates[dates.length - 1] : null;\n}\n\nfunction determineStatus(amount, realizationAmount) {\n  const balance = amount - realizationAmount;\n\n  if (Math.abs(balance) <= 1) {\n    return \"SETTLED\";\n  }\n\n  if (balance > 0) {\n    return \"PARTIAL\";\n  }\n\n  return \"OVER_SETTLED\";\n}\n\nconst usedGL = new Set();\nconst workingPaperResult = [];\nconst matchDetail = [];\n\nfor (const wp of workingPaper) {\n  const wpDescription = wp.description ?? \"\";\n  const wpReferences = extractReferences(wpDescription);\n\n  let candidates = [];\n  let matchMethod = \"NO_MATCH\";\n  let confidence = 0;\n\n  /*\n   * 1. Exact PO/WO matching\n   */\n  if (wpReferences.length) {\n    candidates = glCredits.filter(gl => {\n      if (usedGL.has(gl.glRowId)) {\n        return false;\n      }\n\n      const glReferences = extractReferences(gl.description);\n\n      return wpReferences.some(reference => {\n        return glReferences.includes(reference);\n      });\n    });\n\n    if (candidates.length) {\n      matchMethod = \"PO_WO_EXACT\";\n      confidence = 1;\n    }\n  }\n\n  /*\n   * 2. Phrase matching untuk item tanpa PO/WO\n   */\n  if (!candidates.length) {\n    const scoredCandidates = glCredits\n      .filter(gl => !usedGL.has(gl.glRowId))\n      .map(gl => {\n        const ruleResult = phraseRule(\n          wpDescription,\n          gl.description\n        );\n\n        const similarity = similarityScore(\n          wpDescription,\n          gl.description\n        );\n\n        return {\n          gl,\n          ruleResult,\n          score: similarity.score,\n          matchedTokens: similarity.matchedTokens\n        };\n      })\n      .filter(item => {\n        if (item.ruleResult === false) {\n          return false;\n        }\n\n        if (item.ruleResult === true) {\n          return item.score >= 0.15;\n        }\n\n        return item.score >= 0.45;\n      });\n\n    if (scoredCandidates.length) {\n      const bestScore = Math.max(\n        ...scoredCandidates.map(item => item.score)\n      );\n\n      const hasExplicitRule = scoredCandidates.some(item => {\n        return item.ruleResult === true;\n      });\n\n      if (hasExplicitRule) {\n        candidates = scoredCandidates.map(item => item.gl);\n      } else {\n        candidates = scoredCandidates\n          .filter(item => {\n            return item.score >= Math.max(\n              0.45,\n              bestScore - 0.15\n            );\n          })\n          .map(item => item.gl);\n      }\n\n      if (candidates.length) {\n        matchMethod = hasExplicitRule\n          ? \"PHRASE_RULE\"\n          : \"PHRASE_SIMILARITY\";\n\n        confidence = Number(\n          bestScore.toFixed(2)\n        );\n      }\n    }\n  }\n\n  const realizationAmount = candidates.reduce(\n    (total, gl) => total + Number(gl.credit || 0),\n    0\n  );\n\n  const balance = Number(wp.amount || 0) - realizationAmount;\n\n  const status = candidates.length\n    ? determineStatus(wp.amount, realizationAmount)\n    : \"UNSETTLED\";\n\n  for (const gl of candidates) {\n    usedGL.add(gl.glRowId);\n\n    matchDetail.push({\n      wpRowId: wp.wpRowId,\n      wpVoucherNo: wp.voucherNo,\n      wpDescription: wp.description,\n\n      glRowId: gl.glRowId,\n      glDate: gl.date,\n      glJournalNo: gl.journalNo,\n      glDescription: gl.description,\n      glCredit: gl.credit,\n\n      matchMethod,\n      confidence\n    });\n  }\n\n  workingPaperResult.push({\n    ...wp,\n\n    realizationDate: candidates.length\n      ? latestDate(candidates)\n      : null,\n\n    realizationVouchers: candidates\n      .map(gl => gl.journalNo)\n      .filter(Boolean),\n\n    realizationAmount,\n\n    balance,\n\n    status,\n    matchMethod,\n    confidence\n  });\n}\n\nconst unmatchedGL = glCredits\n  .filter(gl => !usedGL.has(gl.glRowId))\n  .map(gl => ({\n    ...gl,\n    status: \"UNMATCHED_GL\"\n  }));\n\nconst totalAdvance = workingPaperResult.reduce(\n  (total, row) => total + Number(row.amount || 0),\n  0\n);\n\nconst totalRealization = workingPaperResult.reduce(\n  (total, row) => total + Number(row.realizationAmount || 0),\n  0\n);\n\nconst totalBalance = workingPaperResult.reduce(\n  (total, row) => total + Number(row.balance || 0),\n  0\n);\n\nconst positiveOutstanding = workingPaperResult.reduce(\n  (total, row) => {\n    return total + Math.max(Number(row.balance || 0), 0);\n  },\n  0\n);\n\nconst summary = {\n  period: \"April 2026\",\n  totalAdvance,\n  totalRealization,\n  totalBalance,\n  positiveOutstanding,\n\n  workingPaperCount: workingPaperResult.length,\n  matchedWorkingPaperCount: workingPaperResult.filter(row => {\n    return row.realizationAmount > 0;\n  }).length,\n\n  settledCount: workingPaperResult.filter(row => {\n    return row.status === \"SETTLED\";\n  }).length,\n\n  partialCount: workingPaperResult.filter(row => {\n    return row.status === \"PARTIAL\";\n  }).length,\n\n  overSettledCount: workingPaperResult.filter(row => {\n    return row.status === \"OVER_SETTLED\";\n  }).length,\n\n  unsettledCount: workingPaperResult.filter(row => {\n    return row.status === \"UNSETTLED\";\n  }).length,\n\n  glCreditCount: glCredits.length,\n  matchedGLCount: matchDetail.length,\n  unmatchedGLCount: unmatchedGL.length,\n\n  outstandingItems: workingPaperResult\n    .filter(row => {\n      return row.balance > 0;\n    })\n    .map(row => ({\n      wpRowId: row.wpRowId,\n      description: row.description,\n      amount: row.amount,\n      realizationAmount: row.realizationAmount,\n      balance: row.balance,\n      status: row.status\n    }))\n};\n\nreturn [\n  {\n    json: {\n      runId: new Date().toISOString(),\n      period: \"2026-04\",\n\n      summary,\n      workingPaperResult,\n      matchDetail,\n      unmatchedGL\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        224
+      ],
+      "id": "72b29979-884f-4d0f-8a84-68b0b1a214a7",
+      "name": "Match"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Match').first().json;\n\nreturn data.workingPaperResult.map(row => ({\n  json: {\n    runId: data.runId,\n    wpRowId: row.wpRowId,\n    advanceDate: row.advanceDate,\n    voucherNo: row.voucherNo,\n    description: row.description,\n    amount: row.amount,\n    realizationDate: row.realizationDate,\n    realizationVouchers: (row.realizationVouchers || []).join(', '),\n    realizationAmount: row.realizationAmount,\n    balance: row.balance,\n    status: row.status,\n    matchMethod: row.matchMethod ?? '',\n    confidence: row.confidence ?? ''\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        464
+      ],
+      "id": "96a29e2c-3e2b-45aa-a445-332036b3cba5",
+      "name": "Prepare - Working Paper Rows"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1ZhezrrlfxgRThhb1B3WHIDZv1Rci5qXoOoGLCUkgy1U",
+          "mode": "list",
+          "cachedResultName": "South City",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZhezrrlfxgRThhb1B3WHIDZv1Rci5qXoOoGLCUkgy1U/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Working_Paper_Result",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZhezrrlfxgRThhb1B3WHIDZv1Rci5qXoOoGLCUkgy1U/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "runId",
+              "displayName": "runId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "wpRowId",
+              "displayName": "wpRowId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "advanceDate",
+              "displayName": "advanceDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "voucherNo",
+              "displayName": "voucherNo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "amount",
+              "displayName": "amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "realizationDate",
+              "displayName": "realizationDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "realizationVouchers",
+              "displayName": "realizationVouchers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "realizationAmount",
+              "displayName": "realizationAmount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "balance",
+              "displayName": "balance",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "matchMethod",
+              "displayName": "matchMethod",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "confidence",
+              "displayName": "confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1152,
+        672
+      ],
+      "id": "989b7867-041c-41e7-a209-aea3ebd6da78",
+      "name": "Write - Working Paper Result",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "lEyho7upT2pNqzOx",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Match').first().json;\n\nreturn (data.matchDetail || []).map(row => ({\n  json: {\n    runId: data.runId,\n    wpRowId: row.wpRowId,\n    wpVoucherNo: row.wpVoucherNo,\n    wpDescription: row.wpDescription,\n    glRowId: row.glRowId,\n    glDate: row.glDate,\n    glJournalNo: row.glJournalNo,\n    glDescription: row.glDescription,\n    glCredit: row.glCredit,\n    matchMethod: row.matchMethod,\n    confidence: row.confidence\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1376,
+        464
+      ],
+      "id": "c9ee1ef0-2d43-4e58-b6e2-d4852f387759",
+      "name": "Prepare - Match Detail Rows"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Match').first().json;\n\nreturn (data.unmatchedGL || []).map(row => ({\n  json: {\n    runId: data.runId,\n    glRowId: row.glRowId,\n    sourceRowIndex: row.sourceRowIndex,\n    date: row.date,\n    journalNo: row.journalNo,\n    description: row.description,\n    debit: row.debit,\n    credit: row.credit,\n    status: 'UNMATCHED'\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        464
+      ],
+      "id": "51987a6a-8d5f-431e-be1f-bc2654263429",
+      "name": "Prepare - Unmatched GL Rows"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1ZhezrrlfxgRThhb1B3WHIDZv1Rci5qXoOoGLCUkgy1U",
+          "mode": "list",
+          "cachedResultName": "South City",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZhezrrlfxgRThhb1B3WHIDZv1Rci5qXoOoGLCUkgy1U/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1018946906,
+          "mode": "list",
+          "cachedResultName": "Match_Detail",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZhezrrlfxgRThhb1B3WHIDZv1Rci5qXoOoGLCUkgy1U/edit#gid=1018946906"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "runId",
+              "displayName": "runId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "wpRowId",
+              "displayName": "wpRowId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "wpVoucherNo",
+              "displayName": "wpVoucherNo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "wpDescription",
+              "displayName": "wpDescription",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "glRowId",
+              "displayName": "glRowId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "glDate",
+              "displayName": "glDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "glJournalNo",
+              "displayName": "glJournalNo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "glDescription",
+              "displayName": "glDescription",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "glCredit",
+              "displayName": "glCredit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "matchMethod",
+              "displayName": "matchMethod",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "confidence",
+              "displayName": "confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1376,
+        672
+      ],
+      "id": "4b9e449d-ea9d-4056-b24d-0e123389afa3",
+      "name": "Write - Match Detail",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "lEyho7upT2pNqzOx",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1ZhezrrlfxgRThhb1B3WHIDZv1Rci5qXoOoGLCUkgy1U",
+          "mode": "list",
+          "cachedResultName": "South City",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZhezrrlfxgRThhb1B3WHIDZv1Rci5qXoOoGLCUkgy1U/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 737365989,
+          "mode": "list",
+          "cachedResultName": "Unmatched_GL",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZhezrrlfxgRThhb1B3WHIDZv1Rci5qXoOoGLCUkgy1U/edit#gid=737365989"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "runId",
+              "displayName": "runId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "glRowId",
+              "displayName": "glRowId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sourceRowIndex",
+              "displayName": "sourceRowIndex",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "journalNo",
+              "displayName": "journalNo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "debit",
+              "displayName": "debit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "kredit ",
+              "displayName": "kredit ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1600,
+        672
+      ],
+      "id": "43435279-6c08-4451-84c4-1888cbc30126",
+      "name": "Write - Unmatched GL",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "lEyho7upT2pNqzOx",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Match').first().json;\nconst summary = data.summary;\n\nconst outstandingItems = (data.workingPaperResult || [])\n  .filter(row => Number(row.balance) > 0)\n  .map(row => ({\n    voucherNo: row.voucherNo,\n    description: row.description,\n    originalAmount: row.amount,\n    realizationAmount: row.realizationAmount,\n    balance: row.balance,\n    status: row.status\n  }));\n\nconst overSettledItems = (data.workingPaperResult || [])\n  .filter(row => row.status === 'OVER_SETTLED')\n  .map(row => ({\n    voucherNo: row.voucherNo,\n    description: row.description,\n    originalAmount: row.amount,\n    realizationAmount: row.realizationAmount,\n    balance: row.balance\n  }));\n\nreturn [\n  {\n    json: {\n      runId: data.runId,\n\n      summaryPayload: {\n        period: 'April 2026',\n        totalAdvance: summary.totalAdvance,\n        totalRealization: summary.totalRealization,\n        positiveOutstanding: summary.positiveOutstanding,\n        settledCount: summary.settledCount,\n        partialCount: summary.partialCount,\n        overSettledCount: summary.overSettledCount,\n        unmatchedGLCount: summary.unmatchedGLCount,\n        outstandingItems,\n        overSettledItems\n      },\n\n      dashboardBase: {\n        runId: data.runId,\n        period: 'April 2026',\n        totalAdvance: summary.totalAdvance,\n        totalRealization: summary.totalRealization,\n        positiveOutstanding: summary.positiveOutstanding,\n        settledCount: summary.settledCount,\n        partialCount: summary.partialCount,\n        overSettledCount: summary.overSettledCount,\n        unmatchedGLCount: summary.unmatchedGLCount,\n        outstandingItems: JSON.stringify(outstandingItems),\n        overSettledItems: JSON.stringify(overSettledItems)\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1840,
+        464
+      ],
+      "id": "dd6484fc-be69-4090-9ae5-4ef957cc4943",
+      "name": "Build - AI Summary Payload"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.deepseek.com/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2048,
+        672
+      ],
+      "id": "c157d2ce-a002-4445-8b9e-a89b10ef82ff",
+      "name": "DeepSeek - Executive Summary",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "LRptCQp3oUmfaQ7F",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const source = $('Build - AI Summary Payload').first().json;\nconst ai = $('DeepSeek - Executive Summary').first().json;\n\nfunction parseList(value) {\n  if (Array.isArray(value)) return value;\n\n  if (typeof value === 'string') {\n    try {\n      const parsed = JSON.parse(value);\n      return Array.isArray(parsed) ? parsed : [];\n    } catch {\n      return [];\n    }\n  }\n\n  return [];\n}\n\nfunction rupiah(value) {\n  return `Rp ${Number(value || 0).toLocaleString('id-ID')}`;\n}\n\nfunction formatOutstanding(value) {\n  const items = parseList(value);\n\n  if (!items.length) {\n    return 'Tidak ada outstanding.';\n  }\n\n  return items.map((item, index) => {\n    return `${index + 1}. ${item.voucherNo || '-'} | ${item.description || '-'} | Realisasi: ${rupiah(item.realizationAmount)} | Saldo: ${rupiah(item.balance)} | Status: ${item.status || '-'}`;\n  }).join('\\n');\n}\n\nfunction formatOverSettled(value) {\n  const items = parseList(value);\n\n  if (!items.length) {\n    return 'Tidak ada over-settled.';\n  }\n\n  return items.map((item, index) => {\n    return `${index + 1}. ${item.voucherNo || '-'} | ${item.description || '-'} | Realisasi: ${rupiah(item.realizationAmount)} | Lebih bayar: ${rupiah(Math.abs(item.balance))}`;\n  }).join('\\n');\n}\n\nlet response = ai;\n\nif (typeof response === 'string') {\n  try {\n    response = JSON.parse(response);\n  } catch {}\n}\n\nif (typeof response.body === 'string') {\n  try {\n    response.body = JSON.parse(response.body);\n  } catch {}\n}\n\nif (typeof response.data === 'string') {\n  try {\n    response.data = JSON.parse(response.data);\n  } catch {}\n}\n\nconst apiResponse =\n  response.body ||\n  response.data ||\n  response;\n\nconst executiveSummary =\n  apiResponse.choices?.[0]?.message?.content?.trim() ||\n  'DeepSeek mengembalikan content kosong.';\n\nreturn [\n  {\n    json: {\n      ...source.dashboardBase,\n\n      period: '2026-04',\n\n      executiveSummary,\n\n      outstandingItems: formatOutstanding(\n        source.dashboardBase.outstandingItems\n      ),\n\n      overSettledItems: formatOverSettled(\n        source.dashboardBase.overSettledItems\n      ),\n\n      generatedAt: new Date().toISOString()\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2272,
+        672
+      ],
+      "id": "21bbaa41-f627-4e09-9534-6872f7293217",
+      "name": "Prepare - Dashboard Row"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1ZhezrrlfxgRThhb1B3WHIDZv1Rci5qXoOoGLCUkgy1U",
+          "mode": "list",
+          "cachedResultName": "South City",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZhezrrlfxgRThhb1B3WHIDZv1Rci5qXoOoGLCUkgy1U/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 822210208,
+          "mode": "list",
+          "cachedResultName": "Dashboard",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZhezrrlfxgRThhb1B3WHIDZv1Rci5qXoOoGLCUkgy1U/edit#gid=822210208"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "runId",
+              "displayName": "runId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "period",
+              "displayName": "period",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "totalAdvance",
+              "displayName": "totalAdvance",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "totalRealization",
+              "displayName": "totalRealization",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "positiveOutstanding",
+              "displayName": "positiveOutstanding",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "settledCount",
+              "displayName": "settledCount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "partialCount",
+              "displayName": "partialCount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "overSettledCount",
+              "displayName": "overSettledCount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "unmatchdGLCount",
+              "displayName": "unmatchdGLCount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "executiveSummary",
+              "displayName": "executiveSummary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "outstandingItems",
+              "displayName": "outstandingItems",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "overSettledItems",
+              "displayName": "overSettledItems",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "generatedAt",
+              "displayName": "generatedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2480,
+        672
+      ],
+      "id": "c166ed15-bd48-4a7f-8d6f-4750ebcc862e",
+      "name": "Write - Dashboard",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "lEyho7upT2pNqzOx",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload =\n  $('Build - AI Summary Payload').first().json.summaryPayload;\n\nreturn [\n  {\n    json: {\n      model: 'deepseek-flash',\n\n      messages: [\n        {\n          role: 'system',\n          content:\n            'Anda adalah analis Finance. Buat executive summary singkat dalam Bahasa Indonesia. Jangan mengubah atau mengarang angka. Sebutkan total advance, total realisasi, saldo outstanding, item yang masih memiliki saldo, dan saran tindak lanjut.'\n        },\n        {\n          role: 'user',\n          content:\n            'Data settlement April 2026:\\n' +\n            JSON.stringify(payload)\n        }\n      ],\n\n      // Penting: matikan thinking agar jawaban masuk ke content\n      thinking: {\n        type: 'disabled'\n      },\n\n      temperature: 0.2,\n      max_tokens: 800,\n      stream: false\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1840,
+        672
+      ],
+      "id": "dc77aea8-6b14-4d6a-946e-d58d096820a9",
+      "name": "Prepare - Deepseek"
+    }
+  ],
+  "pinData": {
+    "When clicking ‘Execute workflow’": [
+      {
+        "json": {}
+      }
+    ]
+  },
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Read - GL",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read - Working Paper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read - Working Paper": {
+      "main": [
+        [
+          {
+            "node": "Extract Working",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Working": {
+      "main": [
+        [
+          {
+            "node": "Collect - Working",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read - GL": {
+      "main": [
+        [
+          {
+            "node": "Extract GL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract GL": {
+      "main": [
+        [
+          {
+            "node": "Collect - GL Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect - Working": {
+      "main": [
+        [
+          {
+            "node": "Normalize - Working",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect - GL Rows": {
+      "main": [
+        [
+          {
+            "node": "Normalize - GL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize - Working": {
+      "main": [
+        [
+          {
+            "node": "Merge - Source Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize - GL": {
+      "main": [
+        [
+          {
+            "node": "Merge - Source Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge - Source Data": {
+      "main": [
+        [
+          {
+            "node": "Build - Source Contract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build - Source Contract": {
+      "main": [
+        [
+          {
+            "node": "Match",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Match": {
+      "main": [
+        [
+          {
+            "node": "Prepare - Working Paper Rows",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare - Match Detail Rows",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare - Unmatched GL Rows",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Build - AI Summary Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write - Unmatched GL": {
+      "main": [
+        []
+      ]
+    },
+    "Prepare - Working Paper Rows": {
+      "main": [
+        [
+          {
+            "node": "Write - Working Paper Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare - Match Detail Rows": {
+      "main": [
+        [
+          {
+            "node": "Write - Match Detail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare - Unmatched GL Rows": {
+      "main": [
+        [
+          {
+            "node": "Write - Unmatched GL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build - AI Summary Payload": {
+      "main": [
+        [
+          {
+            "node": "Prepare - Deepseek",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek - Executive Summary": {
+      "main": [
+        [
+          {
+            "node": "Prepare - Dashboard Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare - Dashboard Row": {
+      "main": [
+        [
+          {
+            "node": "Write - Dashboard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare - Deepseek": {
+      "main": [
+        [
+          {
+            "node": "DeepSeek - Executive Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a0f11fe7-7872-435c-831a-9383bc2c3b0e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ffcc53896f492b262d7a23c7beb3e59e4f4b9713fe6ed908fb6d3f09d45dd6fc"
+  },
+  "nodeGroups": [],
+  "id": "OgMyS8W7M0mF9p7e",
+  "tags": []
+}
